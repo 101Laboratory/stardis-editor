@@ -23,6 +23,7 @@ from models.scene_model import (
     SceneModel, Body, VolumeProperties, MaterialRef, SurfaceZone,
     Probe, ProbeType, BodyType, Side, ImportedSTL, PaintedRegion, IRCamera,
     SceneLight, LightType,
+    SolidFluidConnection, SolidSolidConnection,
     detect_normal_orientation,
 )
 from models.material_database import MaterialDatabase, Material
@@ -186,10 +187,13 @@ class SceneEditor(QMainWindow):
         # 场景树右键操作
         tree.request_add_body.connect(self._on_add_body)
         tree.request_delete_body.connect(self._on_delete_body)
+        tree.request_rename_zone.connect(self._on_rename_zone)
         tree.request_paint_mode.connect(self._on_enter_paint)
         tree.request_add_probe.connect(self._on_add_probe_manual)
         tree.request_delete_probe.connect(self._on_delete_probe)
         tree.request_delete_conn.connect(self._on_delete_conn)
+        tree.request_add_sf_connection.connect(self._on_add_sf_connection)
+        tree.request_add_ss_connection.connect(self._on_add_ss_connection)
         tree.request_add_camera_default.connect(self._on_add_camera_default)
         tree.request_add_camera_from_view.connect(self._on_add_camera_from_view)
         tree.request_delete_camera.connect(self._on_delete_camera)
@@ -270,8 +274,9 @@ class SceneEditor(QMainWindow):
 
     def open_scene(self, path: str = ""):
         if not path:
+            start_dir = os.path.dirname(self._scene_file) if self._scene_file else ""
             path, _ = QFileDialog.getOpenFileName(
-                self, "打开场景文件", "", "Stardis 场景 (*.txt);;所有文件 (*)")
+                self, "打开场景文件", start_dir, "Stardis 场景 (*.txt);;所有文件 (*)")
         if not path:
             return
         if not os.path.isfile(path):
@@ -569,8 +574,9 @@ class SceneEditor(QMainWindow):
     # ─── 几何体管理 ──────────────────────────────────────────────
 
     def _on_add_body(self):
+        start_dir = os.path.dirname(self._scene_file) if self._scene_file else ""
         paths, _ = QFileDialog.getOpenFileNames(
-            self, "选择 STL 文件", "", "STL Files (*.stl)")
+            self, "选择 STL 文件", start_dir, "STL Files (*.stl)")
         if not paths:
             return
         for path in paths:
@@ -603,6 +609,16 @@ class SceneEditor(QMainWindow):
 
         self._refresh_all()
 
+    def _on_rename_zone(self, body_name, old_name, new_name):
+        for body in self._model.bodies:
+            if body.name == body_name:
+                for zone in body.surface_zones:
+                    if zone.name == old_name:
+                        zone.name = new_name
+                        break
+                break
+        self._tree.rebuild(self._model)
+
     def _on_delete_body(self, name):
         self._model.bodies = [b for b in self._model.bodies if b.name != name]
         self._refresh_all()
@@ -610,6 +626,22 @@ class SceneEditor(QMainWindow):
     def _on_delete_conn(self, name):
         self._model.connections = [c for c in self._model.connections if c.name != name]
         self._refresh_all()
+
+    def _on_add_sf_connection(self):
+        """添加空的固流耦合界面，参与方在属性面板中选择。"""
+        name = self._model.next_connection_name("SF")
+        conn = SolidFluidConnection(name=name)
+        self._model.connections.append(conn)
+        self._tree.rebuild(self._model)
+        self._props.show_connection(name)
+
+    def _on_add_ss_connection(self):
+        """添加空的固固接触界面，参与方在属性面板中选择。"""
+        name = self._model.next_connection_name("SS")
+        conn = SolidSolidConnection(name=name)
+        self._model.connections.append(conn)
+        self._tree.rebuild(self._model)
+        self._props.show_connection(name)
 
     # ─── 摄像机管理 ──────────────────────────────────────────────
 

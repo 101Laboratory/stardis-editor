@@ -414,6 +414,13 @@ class SceneModel:
                 return l
         return None
 
+    def next_connection_name(self, prefix: str = "SF") -> str:
+        existing = {c.name for c in self.connections}
+        i = 1
+        while f"{prefix}_{i}" in existing:
+            i += 1
+        return f"{prefix}_{i}"
+
     def next_light_name(self, prefix: str = "Light") -> str:
         existing = {l.name for l in self.lights}
         i = 1
@@ -608,8 +615,11 @@ def detect_normal_orientation_from_polydata(poly) -> NormalOrientation:
         return NormalOrientation.UNKNOWN
 
     # 合并重复顶点，确保拓扑正确（STL 常见重复顶点）
+    # 使用绝对容差合并浮点微小差异（~1e-16）的点，避免误判为开放网格
     clean = vtk.vtkCleanPolyData()
     clean.SetInputData(poly)
+    clean.SetToleranceIsAbsolute(True)
+    clean.SetAbsoluteTolerance(1e-6)
     clean.Update()
     cleaned = clean.GetOutput()
 

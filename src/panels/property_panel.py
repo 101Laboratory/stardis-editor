@@ -11,6 +11,7 @@ from PyQt5.QtWidgets import (
     QTableWidgetItem, QHeaderView, QAbstractItemView, QCheckBox,
 )
 from PyQt5.QtCore import pyqtSignal, Qt
+from PyQt5.QtGui import QValidator
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from models.scene_model import (
@@ -27,10 +28,32 @@ from models.material_database import MaterialDatabase, Material
 from panels.task_editors import TaskQueueEditor, TaskEditor
 
 
+class _LenientDoubleSpinBox(QDoubleSpinBox):
+    """放宽中间态校验，允许键入增加位数。"""
+    def validate(self, text, pos):
+        state, text, pos = super().validate(text, pos)
+        if state == QValidator.Invalid:
+            # 只要还能解析成数字，就允许中间态
+            try:
+                float(text.replace(self.suffix(), "").strip())
+                state = QValidator.Intermediate
+            except ValueError:
+                pass
+        return state, text, pos
+
+    def value(self):
+        """确保返回当前显示文本对应的值，即使尚未按回车提交。"""
+        old = self.blockSignals(True)
+        self.interpretText()
+        self.blockSignals(old)
+        return super().value()
+
+
 def _spin(value=0.0, lo=-1e9, hi=1e9, decimals=4, suffix=""):
-    s = QDoubleSpinBox()
+    s = _LenientDoubleSpinBox()
     s.setRange(lo, hi)
     s.setDecimals(decimals)
+    s.setKeyboardTracking(False)
     s.setValue(value)
     if suffix:
         s.setSuffix(f" {suffix}")
@@ -40,6 +63,7 @@ def _spin(value=0.0, lo=-1e9, hi=1e9, decimals=4, suffix=""):
 def _ispin(value=0, lo=0, hi=999999999):
     s = QSpinBox()
     s.setRange(lo, hi)
+    s.setKeyboardTracking(False)
     s.setValue(value)
     return s
 
@@ -61,21 +85,14 @@ class GlobalSettingsEditor(QWidget):
         layout.addRow("线性化参考温度 T_reference:", self.t_ref)
         layout.addRow("几何缩放 SCALE:", self.scale)
 
-        self.stats_label = QLabel()
-        layout.addRow("", self.stats_label)
-
         for w in (self.t_amb, self.t_ref, self.scale):
             w.valueChanged.connect(self.property_changed.emit)
 
-    def load(self, gs: GlobalSettings, model: SceneModel):
+    def load(self, gs: GlobalSettings):
         self.blockSignals(True)
         self.t_amb.setValue(gs.t_ambient)
         self.t_ref.setValue(gs.t_reference)
         self.scale.setValue(gs.scale)
-        total_zones = sum(len(b.surface_zones) for b in model.bodies)
-        self.stats_label.setText(
-            f"几何体: {len(model.bodies)}  表面区域: {total_zones}  "
-            f"连接: {len(model.connections)}")
         self.blockSignals(False)
 
     def apply_to(self, gs: GlobalSettings):
@@ -157,11 +174,20 @@ class CavityGroupBox(QGroupBox):
         for w in (self.lam, self.rho, self.cp, self.delta_spin,
                   self.t_init, self.imposed_spin, self.power):
             w.valueChanged.connect(self._on_spinbox_changed)
-        for w in (self.type_combo, self.delta_combo, self.imposed_combo):
-            w.currentIndexChanged.connect(self.property_changed.emit)
+        self.type_combo.currentIndexChanged.connect(self.property_changed.emit)
+        self.delta_combo.currentIndexChanged.connect(self._on_delta_combo_changed)
+        self.imposed_combo.currentIndexChanged.connect(self._on_imposed_combo_changed)
 
     def _on_toggled(self, checked: bool):
         self._content.setVisible(checked)
+        self.property_changed.emit()
+
+    def _on_delta_combo_changed(self, index):
+        self.delta_spin.setEnabled(index == 1)
+        self.property_changed.emit()
+
+    def _on_imposed_combo_changed(self, index):
+        self.imposed_spin.setEnabled(index == 1)
         self.property_changed.emit()
 
     # ── 材质数据库 ──
@@ -391,6 +417,8 @@ class BodyEditor(QWidget):
         self.outer_cavity.load_volume(outer_vol, outer_vol.material.source_material)
         self.inner_cavity.setChecked(inner_on)
         self.outer_cavity.setChecked(outer_on)
+        self.inner_cavity._content.setVisible(inner_on)
+        self.outer_cavity._content.setVisible(outer_on)
         self._last_modified = self.inner_cavity
         self.inner_cavity.blockSignals(False)
         self.outer_cavity.blockSignals(False)
@@ -750,23 +778,32 @@ class ConnectionEditor(QWidget):
         super().__init__()
         layout = QFormLayout(self)
         self.type_label = QLabel()
-        self.body_a_label = QLabel()
-        self.body_b_label = QLabel()
+        self.body_a_combo = QComboBox()
+        self.body_b_combo = QComboBox()
         layout.addRow("类型:", self.type_label)
-        layout.addRow("几何体 A:", self.body_a_label)
-        layout.addRow("几何体 B:", self.body_b_label)
+        layout.addRow("几何体 A:", self.body_a_combo)
+        layout.addRow("几何体 B:", self.body_b_combo)
 
-        # Solid-Fluid 参数
+        # 固流耦合参数（顺序与 stardis CLI 一致：Tref ε spec hc）
         self.sf_tref = _spin(300, 0, 1e6, 1, "K")
-        self.sf_emissivity = _spin(0.9, 0, 1, 4)
-        self.sf_specular = _spin(0, 0, 1, 4)
-        self.sf_hc = _spin(0, 0, 1e6, 2, "W/m²/K")
+        self.sf_tref.setToolTip("辐射线性化参考温度 (Tref)")
         layout.addRow("参考温度 Tref:", self.sf_tref)
+
+        self.sf_emissivity = _spin(0.9, 0, 1, 4)
+        self.sf_emissivity.setToolTip("界面发射率 ε（流体侧着色器属性）")
         layout.addRow("发射率 ε:", self.sf_emissivity)
-        layout.addRow("镜面分数:", self.sf_specular)
+
+        self.sf_specular = _spin(0, 0, 1, 4)
+        self.sf_specular.setToolTip("镜面反射比例（0=完全漫反射, 1=完全镜面）")
+        layout.addRow("镜面分量:", self.sf_specular)
+
+        self.sf_hc = _spin(0, 0, 1e6, 2, "W/m²/K")
         layout.addRow("对流系数 hc:", self.sf_hc)
 
-        # Solid-Solid 参数
+        # 固流耦合参数组
+        self._sf_widgets = [self.sf_tref, self.sf_emissivity, self.sf_specular, self.sf_hc]
+
+        # 固固接触：接触热阻
         self.ss_resistance = _spin(0, 0, 1e6, 6, "m²·K/W")
         layout.addRow("接触热阻:", self.ss_resistance)
 
@@ -774,29 +811,51 @@ class ConnectionEditor(QWidget):
         layout.addRow("界面 STL:", self.stl_label)
 
         self._conn_name = ""
-        for w in (self.sf_tref, self.sf_emissivity, self.sf_specular, self.sf_hc, self.ss_resistance):
+        for w in (self.sf_tref, self.sf_emissivity, self.sf_specular, self.sf_hc,
+                  self.ss_resistance):
             w.valueChanged.connect(self.property_changed.emit)
+        self.body_a_combo.currentIndexChanged.connect(self.property_changed.emit)
+        self.body_b_combo.currentIndexChanged.connect(self.property_changed.emit)
+
+    def set_body_names(self, names):
+        """刷新 body 下拉框选项列表。"""
+        for combo in (self.body_a_combo, self.body_b_combo):
+            combo.blockSignals(True)
+            combo.clear()
+            combo.addItem("(无)", "")
+            for n in names:
+                combo.addItem(n, n)
+            combo.blockSignals(False)
+
+    def _set_row_visible(self, widget, visible):
+        """显示/隐藏 QFormLayout 中的一行（含标签）。"""
+        widget.setVisible(visible)
+        label = self.layout().labelForField(widget)
+        if label:
+            label.setVisible(visible)
 
     def load(self, conn):
         self.blockSignals(True)
         self._conn_name = conn.name
         if isinstance(conn, SolidFluidConnection):
-            self.type_label.setText("SOLID_FLUID")
-            self.body_a_label.setText(conn.body_a)
-            self.body_b_label.setText(conn.body_b)
+            self.type_label.setText("固流耦合")
+            self._set_combo_value(self.body_a_combo, conn.body_a)
+            self._set_combo_value(self.body_b_combo, conn.body_b)
             self.sf_tref.setValue(conn.tref)
             self.sf_emissivity.setValue(conn.emissivity)
             self.sf_specular.setValue(conn.specular_fraction)
             self.sf_hc.setValue(conn.hc)
-            self.sf_tref.show(); self.sf_emissivity.show(); self.sf_specular.show(); self.sf_hc.show()
-            self.ss_resistance.hide()
+            for w in self._sf_widgets:
+                self._set_row_visible(w, True)
+            self._set_row_visible(self.ss_resistance, False)
         elif isinstance(conn, SolidSolidConnection):
-            self.type_label.setText("SOLID_SOLID")
-            self.body_a_label.setText(conn.body_a)
-            self.body_b_label.setText(conn.body_b)
+            self.type_label.setText("固固接触")
+            self._set_combo_value(self.body_a_combo, conn.body_a)
+            self._set_combo_value(self.body_b_combo, conn.body_b)
             self.ss_resistance.setValue(conn.contact_resistance)
-            self.ss_resistance.show()
-            self.sf_tref.hide(); self.sf_emissivity.hide(); self.sf_specular.hide(); self.sf_hc.hide()
+            self._set_row_visible(self.ss_resistance, True)
+            for w in self._sf_widgets:
+                self._set_row_visible(w, False)
         stls = ", ".join(os.path.basename(s) for s in conn.stl_files)
         self.stl_label.setText(stls or "-")
         self.blockSignals(False)
@@ -809,6 +868,13 @@ class ConnectionEditor(QWidget):
             conn.hc = self.sf_hc.value()
         elif isinstance(conn, SolidSolidConnection):
             conn.contact_resistance = self.ss_resistance.value()
+        conn.body_a = self.body_a_combo.currentData() or ""
+        conn.body_b = self.body_b_combo.currentData() or ""
+
+    @staticmethod
+    def _set_combo_value(combo, value):
+        idx = combo.findData(value)
+        combo.setCurrentIndex(idx if idx >= 0 else 0)
 
 
 class ProbeEditor(QWidget):
@@ -1190,7 +1256,7 @@ class PropertyPanel(QWidget):
 
     def show_global(self):
         self._title.setText("全局设置")
-        self.global_editor.load(self._model.global_settings, self._model)
+        self.global_editor.load(self._model.global_settings)
         self._stack.setCurrentIndex(PAGE_GLOBAL)
 
     def show_body(self, body_name: str):
@@ -1213,7 +1279,8 @@ class PropertyPanel(QWidget):
         conn = self._model.get_connection_by_name(conn_name)
         if not conn:
             return
-        self._title.setText(f"连接: {conn_name}")
+        self._title.setText(f"耦合界面: {conn_name}")
+        self.conn_editor.set_body_names([b.name for b in self._model.bodies])
         self.conn_editor.load(conn)
         self._stack.setCurrentIndex(PAGE_CONN)
 

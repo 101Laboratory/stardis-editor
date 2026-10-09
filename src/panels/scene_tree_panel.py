@@ -76,6 +76,8 @@ class SceneTreePanel(QTreeWidget):
     request_add_probe   = pyqtSignal()
     request_delete_probe = pyqtSignal(str)
     request_delete_conn  = pyqtSignal(str)
+    request_add_sf_connection = pyqtSignal()       # 添加固流耦合界面
+    request_add_ss_connection = pyqtSignal()       # 添加固固接触界面
     request_add_camera_default = pyqtSignal()      # 添加默认参数摄像机
     request_add_camera_from_view = pyqtSignal()    # 根据当前视角创建摄像机
     request_delete_camera = pyqtSignal(str)
@@ -153,11 +155,11 @@ class SceneTreePanel(QTreeWidget):
                 b_item.addChild(z_item)
         body_grp.setExpanded(True)
 
-        # 3) 连接组
-        conn_grp = self._make_item(f"🔗 连接 ({len(model.connections)})", NODE_CONN_GRP, "")
+        # 3) 耦合界面组
+        conn_grp = self._make_item(f"🔗 耦合界面 ({len(model.connections)})", NODE_CONN_GRP, "")
         self.addTopLevelItem(conn_grp)
         for conn in model.connections:
-            ctype = "固流" if isinstance(conn, SolidFluidConnection) else "固固"
+            ctype = "固流耦合" if isinstance(conn, SolidFluidConnection) else "固固接触"
             c_item = self._make_item(f"{conn.name} [{ctype}]", NODE_CONN, conn.name)
             conn_grp.addChild(c_item)
 
@@ -359,6 +361,11 @@ class SceneTreePanel(QTreeWidget):
             act_rename = menu.addAction("重命名")
             act_rename.triggered.connect(lambda: self._rename_zone(body_name, nname))
             menu.addSeparator()
+        elif ntype == NODE_CONN_GRP:
+            act_sf = menu.addAction("添加固流耦合界面...")
+            act_sf.triggered.connect(lambda: self.request_add_sf_connection.emit())
+            act_ss = menu.addAction("添加固固接触界面...")
+            act_ss.triggered.connect(lambda: self.request_add_ss_connection.emit())
         elif ntype == NODE_CONN:
             act = menu.addAction("删除")
             act.triggered.connect(lambda: self.request_delete_conn.emit(nname))

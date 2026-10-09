@@ -49,7 +49,8 @@ class CommandBuilder:
 
     @staticmethod
     def build_htpp(htpp_mode: HtppMode, params: HtppParams,
-                   input_file: str) -> List[str]:
+                   input_file: str,
+                   output_file_override: Optional[str] = None) -> List[str]:
         """构建 htpp 参数列表。
 
         参数顺序遵循：htpp [-fhVv] [-i img_opt[:img_opt ...]] [-m map_opt[:map_opt ...]]
@@ -74,8 +75,9 @@ class CommandBuilder:
                 args.extend(['-m', map_opts])
 
         # 输出文件 (-o)
-        if params.output_file:
-            args.extend(['-o', params.output_file])
+        effective_output = output_file_override or params.output_file
+        if effective_output:
+            args.extend(['-o', effective_output])
 
         # 线程数 (-t)
         if params.threads > 1:

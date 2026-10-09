@@ -261,3 +261,37 @@ class TestResolveAll:
         queue = TaskQueue(tasks=[task])
         resolved = resolve_all(queue, model, EditorPreferences(), str(tmp_path))
         assert resolved[0].stderr_file is None
+
+    def test_htpp_output_file_template_not_overwritten(self, tmp_path):
+        """变量展开后，task.htpp_params.output_file 应保留原始模板字符串。"""
+        stardis_exe = self._make_exe(tmp_path, "stardis")
+        htpp_exe = self._make_exe(tmp_path, "htpp")
+        cam = IRCamera(name="C1", resolution=(320, 240), spp=32)
+        model = SceneModel()
+        model.cameras = [cam]
+
+        ir_task = Task(
+            id="ir1", name="IR", task_type=TaskType.STARDIS,
+            compute_mode=ComputeMode.IR_RENDER,
+            exe_ref=stardis_exe, working_dir=str(tmp_path),
+            stardis_params=StardisParams(model_file="s.txt", camera_ref="C1"),
+        )
+        template = "output_{TASK_NAME}_{TASK_INDEX}.ppm"
+        htpp_task = Task(
+            id="htpp1", name="MyHTPP", task_type=TaskType.HTPP,
+            htpp_mode=HtppMode.IMAGE, exe_ref=htpp_exe,
+            working_dir=str(tmp_path),
+            input_source=InputFromTask(task_id="ir1"),
+            htpp_params=HtppParams(output_file=template),
+        )
+        queue = TaskQueue(tasks=[ir_task, htpp_task])
+
+        resolved = resolve_all(queue, model, EditorPreferences(), str(tmp_path))
+        # 原始模板字符串应保持不变
+        assert htpp_task.htpp_params.output_file == template
+        # 展开后的绝对路径应出现在命令行 -o 参数中
+        rt = resolved[1]
+        o_idx = rt.args.index('-o')
+        expanded_path = rt.args[o_idx + 1]
+        assert "output_MyHTPP_2.ppm" in expanded_path
+        assert os.path.isabs(expanded_path)

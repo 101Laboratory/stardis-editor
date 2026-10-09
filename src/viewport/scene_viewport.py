@@ -337,7 +337,7 @@ class SceneViewport(QWidget):
         elif key == Qt.Key_N and self._mode == MODE_NAVIGATE and self._selected_body:
             self._toggle_normals(self._selected_body)
             return
-        elif key == Qt.Key_Plus and self._mode == MODE_NAVIGATE:
+        elif key == Qt.Key_Equal and self._mode == MODE_NAVIGATE:
             self._scale_normals(10.0)
             return
         elif key == Qt.Key_Minus and self._mode == MODE_NAVIGATE:

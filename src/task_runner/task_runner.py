@@ -122,6 +122,7 @@ def resolve_all(queue: TaskQueue, model: SceneModel,
         output_file = None
         stderr_file = None
         input_file = None
+        htpp_output_file = None
         args = []
         task_index = queue.tasks.index(task) + 1  # 1-based
         camera_snapshot = None
@@ -198,7 +199,7 @@ def resolve_all(queue: TaskQueue, model: SceneModel,
             if (task.task_type == TaskType.HTPP and task.htpp_params
                     and task.htpp_params.output_file):
                 expanded = expand_variables(task.htpp_params.output_file, var_registry)
-                task.htpp_params.output_file = os.path.abspath(
+                htpp_output_file = os.path.abspath(
                     os.path.join(working_dir, expanded)
                 )
         except VariableError as e:
@@ -210,6 +211,7 @@ def resolve_all(queue: TaskQueue, model: SceneModel,
         if task.task_type == TaskType.HTPP:
             args = CommandBuilder.build_htpp(
                 task.htpp_mode, task.htpp_params, input_file,
+                output_file_override=htpp_output_file,
             )
 
         rt = ResolvedTask(
