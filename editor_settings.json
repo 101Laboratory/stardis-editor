@@ -1,60 +1,9 @@
 {
-  "search_dirs": [
-    "D:/Stardis-GPU/stardis-cpu",
-    "D:/Stardis-GPU/stardis-oxs3d/build",
-    "D:/Stardis-GPU/stardis-oxs3d-merge-phase/build/bin"
-  ],
-  "recent_exes": [
-    "D:/Stardis-GPU/stardis-oxs3d-merge-phase/build/bin\\Release\\stardis.exe",
-    "D:/Stardis-GPU/stardis-oxs3d/build\\bin\\Release\\stardis.exe",
-    "D:/Stardis-GPU/stardis-cpu\\build\\bin\\Release\\stardis.exe",
-    "D:/Works/Projects/Stardis-GPU\\stardis-cus3d-ref-oxs3d\\build\\bin\\Release\\stardis.exe",
-    "D:/Works/Projects/Stardis-GPU\\stardis-cus3d-ref-oxs3d\\build\\bin\\Debug\\stardis.exe",
-    "D:/Works/Projects/Stardis-GPU\\stardis-cus3d-ref-cus3d\\build\\bin\\Release\\stardis.exe",
-    "D:/Works/Projects/Stardis-GPU\\stardis-cus3d-ref-cus3d\\build\\bin\\Debug\\stardis.exe",
-    "D:/Works/Projects/Stardis-GPU\\stardis-cus3d-opt-cascade\\build\\bin\\Release\\stardis.exe",
-    "D:/Works/Projects/Stardis-GPU\\stardis-cus3d-o9\\build\\bin\\Release\\stardis.exe",
-    "D:/Works/Projects/Stardis-GPU\\stardis-cus3d-o9\\build\\bin\\Debug\\stardis.exe",
-    "D:/Works/Projects/Stardis-GPU\\stardis-cus3d-merge-phase\\build\\bin\\Release\\stardis.exe",
-    "D:/Works/Projects/Stardis-GPU\\stardis-cus3d-merge-phase\\build\\bin\\Debug\\stardis.exe",
-    "D:/Works/Projects/Stardis-GPU\\stardis-cus3d-gpu-phase-diag\\build\\bin\\Release\\stardis.exe",
-    "D:/Works/Projects/Stardis-GPU\\stardis-cus3d\\build\\bin\\Release\\stardis.exe",
-    "D:/Works/Projects/Stardis-GPU\\stardis-cus3d\\build\\bin\\Debug\\stardis.exe",
-    "D:/Works/Projects/Stardis-GPU\\stardis-cpu-test-data\\build\\bin\\Release\\stardis.exe",
-    "D:/Works/Projects/Stardis-GPU\\stardis-cpu\\build\\bin\\Release\\stardis.exe",
-    "D:/Works/Projects/Stardis-GPU\\stardis-cpu\\build\\bin\\Debug\\stardis.exe"
-  ],
-  "recent_work_dirs": [
-    "D:/Works/Projects/Stardis-GPU/Stardis-Starter-Pack/porous"
-  ],
-  "recent_projects": [
-    "D:/Stardis-GPU/Stardis-Starter-Pack/cbox-test\\cbox.txt",
-    "D:/Stardis-GPU/Stardis-Starter-Pack/cbox-test/cbox.txt",
-    "D:/Stardis-GPU/Stardis-Starter-Pack/cbox\\cbox.txt",
-    "D:/Stardis-GPU/Stardis-Starter-Pack/cbox/cbox.txt",
-    "D:/Stardis-GPU/Stardis-Starter-Pack/testporous/porous.txt",
-    "D:/Stardis-GPU/Stardis-Starter-Pack/testporous\\porous.txt",
-    "C:/Users/EricPu/Downloads/Stardis-Starter-Pack-0.2.1/Stardis-Starter-Pack-0.2.1/heatsink\\model.txt",
-    "C:/Users/EricPu/Downloads/Stardis-Starter-Pack-0.2.1/Stardis-Starter-Pack-0.2.1/heatsink/model.txt",
-    "D:/Stardis-GPU/Stardis-Starter-Pack/heatsink/model.txt",
-    "D:/Stardis-GPU/Stardis-Starter-Pack/heatsink\\model.txt",
-    "D:/Stardis-GPU/Stardis-Starter-Pack/porous/porous.txt",
-    "D:/Stardis-GPU/Stardis-Starter-Pack/city\\model.txt",
-    "D:/Stardis-GPU/Stardis-Starter-Pack/city/model.txt",
-    "D:/Works/Projects/Stardis-GPU/Stardis-Starter-Pack/porous-test\\porous.txt",
-    "D:/Works/Projects/Stardis-GPU/Stardis-Starter-Pack/porous-test/porous.txt",
-    "D:/Works/Projects/Stardis-GPU/Stardis-Starter-Pack/porous-тест\\porous.txt",
-    "D:/Works/Projects/Stardis-GPU/Stardis-Starter-Pack/porous-тест/porous.txt"
-  ],
-  "last_project_path": "D:/Stardis-GPU/Stardis-Starter-Pack/cbox-test\\cbox.txt",
-  "startup_behavior": "open_last",
-  "exe_tags": {
-    "stardis-cpu": "D:/Stardis-GPU/stardis-cpu\\build\\bin\\Release\\stardis.exe",
-    "stardis-ox": "D:/Stardis-GPU/stardis-oxs3d/build\\bin\\Release\\stardis.exe",
-    "stardis-oxmp": "D:/Stardis-GPU/stardis-oxs3d-merge-phase/build/bin\\Release\\stardis.exe",
-    "htpp": "D:/Stardis-GPU/stardis-cpu/build/bin/Release/htpp.exe",
-    "o16": "D:/Stardis-GPU/stardis-oxs3d-o16/build/bin/Release/stardis.exe",
-    "wos-fix": "D:/Stardis-GPU/stardis-oxs3d-wos-fix/build/bin/Release/stardis.exe",
-    "wf-emb": "D:/Stardis-GPU/stardis-oxs3d-cpu-wf/build/bin/Release/stardis.exe"
-  }
+  "search_dirs": [],
+  "recent_exes": [],
+  "recent_work_dirs": [],
+  "recent_projects": [],
+  "last_project_path": "",
+  "startup_behavior": "none",
+  "exe_tags": {}
 }

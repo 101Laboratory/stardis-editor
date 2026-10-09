@@ -1,3 +1,18 @@
+# Stardis Editor
+
+为 Meso-Star Stardis 及本研究的 Windows/OptiX 实现提供场景编辑、VTK 可视化、边界条件画笔与任务队列。
+
+[完整成果入口](https://github.com/101Laboratory/stardis-research) · [求解器及实验](https://github.com/101Laboratory/stardis-oxs3d) · [论文源码](https://github.com/101Laboratory/stardis-thesis)
+
+```powershell
+python -m pip install -r requirements.txt
+python run_scene_editor.py
+```
+
+运行时需在编辑器中选择实际 stardis/htpp 可执行文件。默认不预置原机路径。2026-10-09 相关 task runner 测试 86 项通过；本发布保留现有历史和本地功能修改。
+
+## 原项目说明
+
 # Stardis Editor - STL 查看器与 Stardis 控制面板
 
 ## 项目概述
